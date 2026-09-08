@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -20,13 +20,13 @@ import {
   MySqlPatientRecord,
 } from '../types/patient';
 
-interface PatientRegisterScreenProps {
+interface RegisterPatientScreenProps {
   onBack: () => void;
-  onNavigateToLogin: () => void;
+  onNavigateToLogin?: () => void;
   onRegisterSuccess: (record: MySqlPatientRecord) => void;
 }
 
-export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
+export const RegisterPatientScreen: React.FC<RegisterPatientScreenProps> = ({
   onBack,
   onNavigateToLogin,
   onRegisterSuccess,
@@ -40,12 +40,7 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
     genero: 'femenino',
     fechaPrimeraSesion: '',
     email: '',
-    password: '',
-    confirmPassword: '',
   });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Estados para abrir los modales de calendario
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
@@ -55,35 +50,8 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Validación estricta de requisitos de contraseña
-  const passwordChecks = useMemo(() => {
-    const pwd = form.password;
-    return {
-      hasMinLength: pwd.length >= 8,
-      hasUppercase: /[A-ZÁÉÍÓÚÑ]/.test(pwd),
-      hasLowercase: /[a-záéíóúñ]/.test(pwd),
-      hasNumber: /[0-9]/.test(pwd),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/]/.test(pwd),
-    };
-  }, [form.password]);
-
-  const isPasswordValid = useMemo(() => {
-    return (
-      passwordChecks.hasMinLength &&
-      passwordChecks.hasUppercase &&
-      passwordChecks.hasLowercase &&
-      passwordChecks.hasNumber &&
-      passwordChecks.hasSpecialChar
-    );
-  }, [passwordChecks]);
-
-  const passwordsMatch = useMemo(() => {
-    return form.password.length > 0 && form.password === form.confirmPassword;
-  }, [form.password, form.confirmPassword]);
-
   // Selección de Fecha de Nacimiento desde el modal de calendario
   const handleSelectBirthDate = (formattedDate: string, dateObj: Date) => {
-    // Cálculo automático de la edad
     const today = new Date();
     let calculatedAge = today.getFullYear() - dateObj.getFullYear();
     const m = today.getMonth() - dateObj.getMonth();
@@ -112,67 +80,55 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
       !form.nombre.trim() ||
       !form.apellidoPaterno.trim() ||
       !form.apellidoMaterno.trim() ||
-      !form.email.trim() ||
-      !form.password.trim() ||
-      !form.confirmPassword.trim()
+      !form.email.trim()
     ) {
       Alert.alert('Datos incompletos', 'Por favor complete todos los campos obligatorios para continuar.');
       return;
     }
 
-    // 2. Validación de Correo Electrónico (debe contener '@')
+    // 2. Validación de Correo Electrónico
     if (!form.email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      Alert.alert('Correo inválido', 'El correo electrónico debe contener un "@" y un dominio válido (ej. usuario@email.com).');
+      Alert.alert('Correo inválido', 'El correo electrónico debe contener un "@" y un dominio válido (ej. paciente@email.com).');
       return;
     }
 
-    // 3. Validación de Contraseña
-    if (!isPasswordValid) {
-      Alert.alert(
-        'Contraseña no segura',
-        'La contraseña debe tener al menos 8 caracteres, incluir letras, números, al menos una mayúscula y un carácter especial.'
-      );
-      return;
-    }
-
-    // 4. Validación de Coincidencia de Contraseñas
-    if (form.password !== form.confirmPassword) {
-      Alert.alert(
-        'Contraseñas no coinciden',
-        'La confirmación de contraseña debe coincidir exactamente con la contraseña ingresada.'
-      );
-      return;
-    }
-
-    // 5. Validación de fechas
+    // 3. Validación de fechas
     if (!form.fechaNacimiento) {
-      Alert.alert('Fecha requerida', 'Por favor seleccione su fecha de nacimiento en el calendario.');
+      Alert.alert('Fecha requerida', 'Por favor seleccione la fecha de nacimiento en el calendario.');
       return;
     }
     if (!form.fechaPrimeraSesion) {
-      Alert.alert('Fecha requerida', 'Por favor seleccione la fecha de su primera sesión.');
+      Alert.alert('Fecha requerida', 'Por favor seleccione la fecha de la primera sesión.');
       return;
     }
 
     const now = new Date();
     const createdAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-    // Objeto estructurado con tipos nativos para MySQL (`pacientes`)
+    // Objeto estructurado para MySQL (`pacientes`) sin contraseña
     const mySqlPatientRecord: MySqlPatientRecord = {
       nombre: form.nombre.trim(),
       apellido_paterno: form.apellidoPaterno.trim(),
       apellido_materno: form.apellidoMaterno.trim(),
       edad: parseInt(form.edad, 10) || 0,
-      fecha_nacimiento: form.fechaNacimiento,     // Columna DATE en MySQL
-      genero: form.genero,                         // ENUM('masculino','femenino','otro')
-      fecha_primera_sesion: form.fechaPrimeraSesion, // Columna DATE en MySQL
+      fecha_nacimiento: form.fechaNacimiento,        // Columna DATE en MySQL
+      genero: form.genero,                            // ENUM('masculino','femenino','otro')
+      fecha_primera_sesion: form.fechaPrimeraSesion,    // Columna DATE en MySQL
       email: form.email.trim().toLowerCase(),
-      password_hash: form.password,                // Se encriptará con hash en backend
-      created_at: createdAt,                       // DATETIME en MySQL
+      created_at: createdAt,                          // DATETIME en MySQL
     };
 
-    console.log('Registro de paciente validado para MySQL:', mySqlPatientRecord);
-    onRegisterSuccess(mySqlPatientRecord);
+    console.log('Nuevo paciente registrado para MySQL:', mySqlPatientRecord);
+    Alert.alert(
+      '¡Paciente Registrado!',
+      `Se ha creado exitosamente la ficha para ${form.nombre.trim()} ${form.apellidoPaterno.trim()}.`,
+      [
+        {
+          text: 'Continuar',
+          onPress: () => onRegisterSuccess(mySqlPatientRecord),
+        },
+      ]
+    );
   };
 
   const genderOptions: { key: Gender; label: string }[] = [
@@ -180,6 +136,14 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
     { key: 'masculino', label: 'Masculino' },
     { key: 'otro', label: 'Otro' },
   ];
+
+  const isFormValid =
+    form.nombre.trim().length > 0 &&
+    form.apellidoPaterno.trim().length > 0 &&
+    form.apellidoMaterno.trim().length > 0 &&
+    form.email.includes('@') &&
+    form.fechaNacimiento.length > 0 &&
+    form.fechaPrimeraSesion.length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -216,130 +180,10 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
             <Text style={styles.sloganText}>Tu bienestar, un día a la vez.</Text>
           </View>
 
-          {/* Tarjeta de Formulario de Registro */}
+          {/* Tarjeta de Registro del Paciente */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Crear Cuenta</Text>
-            <Text style={styles.cardSubtitle}>Complete sus datos de paciente</Text>
-
-            {/* Email con validación de @ */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>
-                Email <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  form.email.length > 0 && !form.email.includes('@') && styles.inputErrorBorder,
-                ]}
-                placeholder="Tuemail@email.com"
-                placeholderTextColor="#9CA3AF"
-                value={form.email}
-                onChangeText={(text) => updateField('email', text)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              {form.email.length > 0 && !form.email.includes('@') && (
-                <Text style={styles.fieldErrorText}>El correo debe contener un '@'</Text>
-              )}
-            </View>
-
-            {/* Contraseña */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>
-                Contraseña <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <View style={styles.passwordInputWrapper}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="••••••••••••••••"
-                  placeholderTextColor="#9CA3AF"
-                  value={form.password}
-                  onChangeText={(text) => updateField('password', text)}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIconButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Guía visual de requisitos de contraseña */}
-              <View style={styles.pwdRequirementsBox}>
-                <Text style={styles.pwdReqTitle}>Requisitos de la contraseña:</Text>
-                <Text style={[styles.pwdReqItem, passwordChecks.hasMinLength ? styles.pwdReqMet : styles.pwdReqUnmet]}>
-                  {passwordChecks.hasMinLength ? '✓' : '•'} Mínimo 8 caracteres
-                </Text>
-                <Text style={[styles.pwdReqItem, passwordChecks.hasUppercase ? styles.pwdReqMet : styles.pwdReqUnmet]}>
-                  {passwordChecks.hasUppercase ? '✓' : '•'} Al menos una letra mayúscula (A-Z)
-                </Text>
-                <Text style={[styles.pwdReqItem, passwordChecks.hasLowercase ? styles.pwdReqMet : styles.pwdReqUnmet]}>
-                  {passwordChecks.hasLowercase ? '✓' : '•'} Al menos una letra minúscula (a-z)
-                </Text>
-                <Text style={[styles.pwdReqItem, passwordChecks.hasNumber ? styles.pwdReqMet : styles.pwdReqUnmet]}>
-                  {passwordChecks.hasNumber ? '✓' : '•'} Al menos un número (0-9)
-                </Text>
-                <Text style={[styles.pwdReqItem, passwordChecks.hasSpecialChar ? styles.pwdReqMet : styles.pwdReqUnmet]}>
-                  {passwordChecks.hasSpecialChar ? '✓' : '•'} Al menos un carácter especial (!@#$%...)
-                </Text>
-              </View>
-            </View>
-
-            {/* Confirmar Contraseña */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>
-                Confirmar Contraseña <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <View
-                style={[
-                  styles.passwordInputWrapper,
-                  form.confirmPassword.length > 0 &&
-                  (passwordsMatch ? styles.inputSuccessBorder : styles.inputErrorBorder),
-                ]}
-              >
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="••••••••••••••••"
-                  placeholderTextColor="#9CA3AF"
-                  value={form.confirmPassword}
-                  onChangeText={(text) => updateField('confirmPassword', text)}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIconButton}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
-              </View>
-              {form.confirmPassword.length > 0 && (
-                <Text
-                  style={[
-                    styles.matchFeedbackText,
-                    passwordsMatch ? styles.matchSuccessText : styles.matchErrorText,
-                  ]}
-                >
-                  {passwordsMatch
-                    ? '✓ Las contraseñas coinciden exactamente'
-                    : '✗ Las contraseñas no coinciden'}
-                </Text>
-              )}
-            </View>
+            <Text style={styles.cardTitle}>Registrar Nuevo Paciente</Text>
+            <Text style={styles.cardSubtitle}>Complete la ficha clínica del paciente</Text>
 
             {/* Nombre */}
             <View style={styles.inputGroup}>
@@ -477,7 +321,29 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Modal de Calendario con Selector Rápido de Año para Fecha de Nacimiento (Hasta 2010) */}
+            {/* Email del Paciente */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>
+                Email del Paciente <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  form.email.length > 0 && !form.email.includes('@') && styles.inputErrorBorder,
+                ]}
+                placeholder="paciente@email.com"
+                placeholderTextColor="#9CA3AF"
+                value={form.email}
+                onChangeText={(text) => updateField('email', text)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {form.email.length > 0 && !form.email.includes('@') && (
+                <Text style={styles.fieldErrorText}>El correo debe contener un '@'</Text>
+              )}
+            </View>
+
+            {/* Modal de Calendario para Fecha de Nacimiento */}
             <DatePickerModal
               visible={showBirthDatePicker}
               title="Fecha de Nacimiento"
@@ -487,7 +353,7 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
               onSelectDate={handleSelectBirthDate}
             />
 
-            {/* Modal de Calendario con Selector Rápido de Año para Fecha de Primera Sesión (Hasta la fecha de hoy del dispositivo) */}
+            {/* Modal de Calendario para Fecha de Primera Sesión */}
             <DatePickerModal
               visible={showSessionDatePicker}
               title="Fecha de Primera Sesión"
@@ -497,26 +363,18 @@ export const PatientRegisterScreen: React.FC<PatientRegisterScreenProps> = ({
               onSelectDate={handleSelectSessionDate}
             />
 
-            {/* Botón Registrarse */}
+            {/* Botón Registrar Paciente */}
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                (!isPasswordValid || !passwordsMatch || !form.email.includes('@')) &&
-                styles.submitButtonDisabled,
+                !isFormValid && styles.submitButtonDisabled,
               ]}
               onPress={handleRegister}
               activeOpacity={0.85}
+              disabled={!isFormValid}
             >
-              <Text style={styles.submitButtonText}>Registrarse</Text>
+              <Text style={styles.submitButtonText}>Registrar Paciente</Text>
             </TouchableOpacity>
-
-            {/* Enlace para Iniciar Sesión si ya tiene cuenta */}
-            <View style={styles.bottomLinks}>
-              <Text style={styles.haveAccountText}>¿Ya tienes una cuenta?</Text>
-              <TouchableOpacity onPress={onNavigateToLogin}>
-                <Text style={styles.loginLinkText}> Iniciar sesión</Text>
-              </TouchableOpacity>
-            </View>
 
           </View>
         </ScrollView>
@@ -534,7 +392,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 220, // Amplitud suficiente para que el teclado no tape ningún input
+    paddingBottom: 60,
   },
   backButton: {
     width: 40,
@@ -621,72 +479,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1F2937',
   },
-  passwordInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1F2937',
-  },
-  eyeIconButton: {
-    padding: 6,
-  },
   inputErrorBorder: {
     borderColor: '#EF4444',
   },
-  inputSuccessBorder: {
-    borderColor: '#22C55E',
-  },
   fieldErrorText: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#EF4444',
     marginTop: 4,
+    marginLeft: 2,
     fontWeight: '500',
-  },
-  pwdRequirementsBox: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 8,
-  },
-  pwdReqTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
-    marginBottom: 4,
-  },
-  pwdReqItem: {
-    fontSize: 11.5,
-    marginVertical: 1.5,
-    fontWeight: '500',
-  },
-  pwdReqMet: {
-    color: '#16A34A',
-    fontWeight: '600',
-  },
-  pwdReqUnmet: {
-    color: '#9CA3AF',
-  },
-  matchFeedbackText: {
-    fontSize: 12,
-    marginTop: 5,
-    fontWeight: '600',
-  },
-  matchSuccessText: {
-    color: '#16A34A',
-  },
-  matchErrorText: {
-    color: '#EF4444',
   },
   datePickerTrigger: {
     flexDirection: 'row',
@@ -696,7 +497,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 12,
   },
   dateIcon: {
     marginRight: 10,
@@ -709,27 +510,33 @@ const styles = StyleSheet.create({
   },
   datePickerPlaceholder: {
     color: '#9CA3AF',
-    fontWeight: 'normal',
+    fontWeight: '400',
   },
   genderContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     borderRadius: 12,
     padding: 3,
   },
   genderOption: {
     flex: 1,
-    paddingVertical: 11,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 10,
+    justifyContent: 'center',
+    borderRadius: 9,
   },
   genderOptionActive: {
     backgroundColor: '#0F613B',
+    shadowColor: '#0F613B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   genderOptionText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#64748B',
   },
   genderOptionTextActive: {
     color: '#FFFFFF',
@@ -741,7 +548,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: 16,
+    marginBottom: 10,
     shadowColor: '#0F613B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -749,27 +556,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: '#A5C1B3',
     shadowOpacity: 0,
     elevation: 0,
   },
   submitButtonText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: '700',
-  },
-  bottomLinks: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  haveAccountText: {
-    fontSize: 13.5,
-    color: '#6B7280',
-  },
-  loginLinkText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: '#0E5C3A',
   },
 });

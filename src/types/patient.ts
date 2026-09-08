@@ -9,8 +9,8 @@ export interface PatientRegistrationForm {
   genero: Gender;
   fechaPrimeraSesion: string;  // Formato 'YYYY-MM-DD'
   email: string;
-  password: string;
-  confirmPassword: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export interface PatientLoginCredentials {
