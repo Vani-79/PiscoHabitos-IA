@@ -13,16 +13,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { MOCK_USERS, UserRole } from '../constants/auth';
 
-interface PatientLoginScreenProps {
+interface LoginScreenProps {
   onBack: () => void;
-  onNavigateToRegister?: () => void;
-  onLoginSuccess: (email: string) => void;
+  onLoginSuccess: (email: string, role: UserRole, name: string) => void;
 }
 
-export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
+export const LoginScreen: React.FC<LoginScreenProps> = ({
   onBack,
-  onNavigateToRegister,
   onLoginSuccess,
 }) => {
   const [email, setEmail] = useState('');
@@ -31,22 +30,35 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
-    if (!email.trim()) {
+    const targetEmail = email.trim().toLowerCase();
+
+    if (!targetEmail) {
       Alert.alert('Email requerido', 'Por favor ingresa tu correo electrónico.');
       return;
     }
-    if (!email.includes('@')) {
+    if (!targetEmail.includes('@')) {
       Alert.alert('Email inválido', 'El correo electrónico debe contener un "@".');
       return;
     }
-    if (!password.trim()) {
-      Alert.alert('Contraseña requerida', 'Por favor ingresa tu contraseña.');
-      return;
-    }
 
-    // Aquí se conectará la autenticación con la base de datos MySQL (SELECT * FROM pacientes WHERE email = ?)
-    console.log('Login iniciado para:', email, 'Recuérdame:', rememberMe);
-    onLoginSuccess(email);
+    // Nota: Por ahora no se exige contraseña, permitiendo ingresar con el campo vacío
+    // ya que la autenticación formal se validará posteriormente con la base de datos MySQL.
+
+    // Comprobación de usuarios de prueba o detección automática de rol
+    const mockUser = MOCK_USERS[targetEmail];
+    if (mockUser) {
+      onLoginSuccess(mockUser.email, mockUser.role, mockUser.name);
+    } else {
+      // Para otros correos ingresados:
+      const nameFromEmail = targetEmail.split('@')[0];
+      const capitalized = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+      const isPsychologist = targetEmail.includes('psicolog');
+      onLoginSuccess(
+        targetEmail,
+        isPsychologist ? 'psicologo' : 'paciente',
+        isPsychologist ? `Lic. ${capitalized}` : capitalized
+      );
+    }
   };
 
   return (
@@ -70,7 +82,7 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
             <Ionicons name="arrow-back" size={24} color="#0F613B" />
           </TouchableOpacity>
 
-          {/* Encabezado Institucional idéntico a la imagen */}
+          {/* Encabezado Institucional */}
           <View style={styles.header}>
             <Image
               source={require('../../assets/logo.png')}
@@ -84,9 +96,9 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
             <Text style={styles.sloganText}>Tu bienestar, un día a la vez.</Text>
           </View>
 
-          {/* Tarjeta de Inicio de Sesión idéntica a la imagen */}
+          {/* Tarjeta de Inicio de Sesión */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Bienvenido</Text>
+            <Text style={styles.cardTitle}>Iniciar Sesión</Text>
             <Text style={styles.cardSubtitle}>Inicie sesión para continuar</Text>
 
             {/* Email */}
@@ -94,16 +106,17 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Tuemail@email.com"
+                placeholder="ejemplo@email.com"
                 placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
               />
             </View>
 
-            {/* Contraseña */}
+            {/* Contraseña (generado visualmente, opcional en validación) */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Contraseña</Text>
               <View style={styles.passwordInputWrapper}>
@@ -143,7 +156,7 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
               <Text style={styles.rememberText}>Recuérdame</Text>
             </TouchableOpacity>
 
-            {/* Botón Entrar */}
+            {/* Botón Principal Entrar */}
             <TouchableOpacity
               style={styles.submitButton}
               onPress={handleLogin}
@@ -152,7 +165,7 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
               <Text style={styles.submitButtonText}>Entrar</Text>
             </TouchableOpacity>
 
-            {/* Enlace de recuperación de contraseña centrado */}
+            {/* Enlace Recuperar Contraseña */}
             <View style={styles.bottomLinksRow}>
               <TouchableOpacity
                 onPress={() =>
@@ -182,7 +195,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 160,
+    paddingBottom: 60,
   },
   backButton: {
     width: 40,
@@ -283,7 +296,7 @@ const styles = StyleSheet.create({
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 22,
   },
   checkbox: {
     width: 20,
@@ -310,7 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
-    marginBottom: 22,
+    marginBottom: 20,
     shadowColor: '#0F613B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

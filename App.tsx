@@ -2,28 +2,24 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
-import { PatientLoginScreen } from './src/screens/PatientLoginScreen';
-import { PatientRegisterScreen } from './src/screens/PatientRegisterScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { DailyCheckInScreen } from './src/screens/DailyCheckInScreen';
-import { MySqlPatientRecord } from './src/types/patient';
+import { PsychologistDashboardScreen } from './src/screens/PsychologistDashboardScreen';
+import { UserRole } from './src/constants/auth';
 
-export type AppScreen = 'welcome' | 'login' | 'register' | 'habits';
+export type AppScreen = 'welcome' | 'login' | 'habits' | 'psychologist-dashboard';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('welcome');
-  const [activePatientName, setActivePatientName] = useState<string>('Vani');
+  const [activeUserName, setActiveUserName] = useState<string>('Carlos');
 
-  const handleRegisterSuccess = (record: MySqlPatientRecord) => {
-    setActivePatientName(record.nombre);
-    setCurrentScreen('habits');
-  };
-
-  const handleLoginSuccess = (email: string) => {
-    // Si inicia sesión, extraemos el nombre del email o mantenemos el predeterminado
-    const nameFromEmail = email.split('@')[0];
-    const capitalized = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-    setActivePatientName(capitalized || 'Vani');
-    setCurrentScreen('habits');
+  const handleLoginSuccess = (email: string, role: UserRole, name: string) => {
+    setActiveUserName(name);
+    if (role === 'psicologo') {
+      setCurrentScreen('psychologist-dashboard');
+    } else {
+      setCurrentScreen('habits');
+    }
   };
 
   return (
@@ -31,30 +27,28 @@ export default function App() {
       <StatusBar style="dark" />
       {currentScreen === 'welcome' && (
         <WelcomeScreen
-          onSelectPatient={() => setCurrentScreen('login')}
+          onStartLogin={() => setCurrentScreen('login')}
         />
       )}
 
       {currentScreen === 'login' && (
-        <PatientLoginScreen
+        <LoginScreen
           onBack={() => setCurrentScreen('welcome')}
-          onNavigateToRegister={() => setCurrentScreen('register')}
           onLoginSuccess={handleLoginSuccess}
-        />
-      )}
-
-      {currentScreen === 'register' && (
-        <PatientRegisterScreen
-          onBack={() => setCurrentScreen('login')}
-          onNavigateToLogin={() => setCurrentScreen('login')}
-          onRegisterSuccess={handleRegisterSuccess}
         />
       )}
 
       {currentScreen === 'habits' && (
         <DailyCheckInScreen
-          userName={activePatientName}
+          userName={activeUserName}
           onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'psychologist-dashboard' && (
+        <PsychologistDashboardScreen
+          doctorName={activeUserName}
+          onLogout={() => setCurrentScreen('welcome')}
         />
       )}
     </SafeAreaProvider>

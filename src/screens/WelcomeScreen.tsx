@@ -5,32 +5,15 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 interface WelcomeScreenProps {
-  onSelectPatient: () => void;
-  onSelectPsychologist?: () => void;
+  onStartLogin: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
-  onSelectPatient,
-  onSelectPsychologist,
-}) => {
-  const handlePsychologistPress = () => {
-    if (onSelectPsychologist) {
-      onSelectPsychologist();
-    } else {
-      Alert.alert(
-        'Panel de Psicólogo',
-        'El módulo para profesionales de la salud mental estará disponible próximamente.',
-        [{ text: 'Entendido', style: 'default' }]
-      );
-    }
-  };
-
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartLogin }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -52,26 +35,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <Text style={styles.sloganText}>Tu bienestar, un día a la vez.</Text>
         </View>
 
-        {/* Sección Inferior: Botones de Selección de Perfil */}
+        {/* Sección Inferior: Botón Único de Inicio de Sesión */}
         <View style={styles.buttonSection}>
-          <Text style={styles.rolePrompt}>Selecciona tu perfil para ingresar:</Text>
-
           <TouchableOpacity
-            style={styles.patientButton}
-            onPress={onSelectPatient}
+            style={styles.loginButton}
+            onPress={onStartLogin}
             activeOpacity={0.85}
           >
-            <Ionicons name="person" size={22} color="#FFFFFF" style={styles.buttonIcon} />
-            <Text style={styles.patientButtonText}>Paciente</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.psychologistButton}
-            onPress={handlePsychologistPress}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="medkit-outline" size={22} color="#0E5C3A" style={styles.buttonIcon} />
-            <Text style={styles.psychologistButtonText}>Psicólogo</Text>
+            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            <Ionicons name="arrow-forward" size={22} color="#FFFFFF" style={styles.buttonIcon} />
           </TouchableOpacity>
         </View>
       </View>
@@ -110,10 +82,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   titlePsico: {
-    color: '#0E5C3A', // Verde bosque oscuro idéntico a la imagen
+    color: '#0E5C3A',
   },
   titleHabitos: {
-    color: '#268D77', // Verde teal / esmeralda idéntico a la imagen
+    color: '#268D77',
   },
   sloganText: {
     fontSize: 17,
@@ -127,14 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  rolePrompt: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6A8296',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  patientButton: {
+  loginButton: {
     backgroundColor: '#0F613B',
     width: '100%',
     flexDirection: 'row',
@@ -142,35 +107,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 14,
-    marginBottom: 14,
     shadowColor: '#0F613B',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 3,
   },
-  patientButtonText: {
+  loginButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
-  },
-  psychologistButton: {
-    backgroundColor: '#E4EDE7',
-    borderWidth: 1.5,
-    borderColor: '#0F613B',
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-  },
-  psychologistButtonText: {
-    color: '#0E5C3A',
-    fontSize: 18,
-    fontWeight: '700',
+    marginRight: 8,
   },
   buttonIcon: {
-    marginRight: 10,
+    marginLeft: 4,
   },
 });

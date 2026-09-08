@@ -14,15 +14,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-interface PatientLoginScreenProps {
+interface PsychologistLoginScreenProps {
   onBack: () => void;
-  onNavigateToRegister?: () => void;
   onLoginSuccess: (email: string) => void;
 }
 
-export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
+export const PsychologistLoginScreen: React.FC<PsychologistLoginScreenProps> = ({
   onBack,
-  onNavigateToRegister,
   onLoginSuccess,
 }) => {
   const [email, setEmail] = useState('');
@@ -44,8 +42,8 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
       return;
     }
 
-    // Aquí se conectará la autenticación con la base de datos MySQL (SELECT * FROM pacientes WHERE email = ?)
-    console.log('Login iniciado para:', email, 'Recuérdame:', rememberMe);
+    // Autenticación preparada para la base de datos MySQL (SELECT * FROM psicologos WHERE email = ?)
+    console.log('Login de psicólogo iniciado para:', email, 'Recuérdame:', rememberMe);
     onLoginSuccess(email);
   };
 
@@ -84,9 +82,11 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
             <Text style={styles.sloganText}>Tu bienestar, un día a la vez.</Text>
           </View>
 
-          {/* Tarjeta de Inicio de Sesión idéntica a la imagen */}
+          {/* Tarjeta de Inicio de Sesión de Psicólogo */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Bienvenido</Text>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Portal Psicólogo</Text>
+            </View>
             <Text style={styles.cardSubtitle}>Inicie sesión para continuar</Text>
 
             {/* Email */}
@@ -94,7 +94,7 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Tuemail@email.com"
+                placeholder="psicologo@email.com"
                 placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
@@ -152,7 +152,7 @@ export const PatientLoginScreen: React.FC<PatientLoginScreenProps> = ({
               <Text style={styles.submitButtonText}>Entrar</Text>
             </TouchableOpacity>
 
-            {/* Enlace de recuperación de contraseña centrado */}
+            {/* Enlace de recuperación de contraseña centrado (sin Crear cuenta) */}
             <View style={styles.bottomLinksRow}>
               <TouchableOpacity
                 onPress={() =>
@@ -229,6 +229,11 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: '#F0F0F0',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardTitle: {
     fontSize: 25,

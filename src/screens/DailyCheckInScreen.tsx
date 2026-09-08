@@ -9,6 +9,7 @@ import {
   Animated,
   Image,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -96,6 +97,14 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
   });
 
   const handleConfirm = () => {
+    if (registeredCount < 6) {
+      Alert.alert(
+        'Hábitos incompletos',
+        `Debes registrar los 6 hábitos antes de poder confirmar el envío. Actualmente llevas ${registeredCount} de 6.`
+      );
+      return;
+    }
+
     const now = new Date();
     const confirmedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
@@ -119,6 +128,11 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
     }
 
     setIsConfirmed(true);
+    Alert.alert(
+      '¡Hábitos Registrados!',
+      'Tus hábitos del día han sido registrados exitosamente.',
+      [{ text: 'Aceptar', style: 'default' }]
+    );
   };
 
   return (
@@ -186,24 +200,31 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
           })}
         </View>
 
-        <View style={styles.confirmationSection}>
-          {isConfirmed ? (
-            <View style={styles.confirmedBox}>
-              <Text style={styles.confirmedText}>Respuestas confirmadas ✅</Text>
-            </View>
-          ) : (
+        {/* Botón Registrar Hábitos (desaparece completamente al ser presionado) */}
+        {!isConfirmed && (
+          <View style={styles.confirmationSection}>
             <TouchableOpacity
               style={[
                 styles.globalConfirmButton,
-                registeredCount === 0 && styles.globalConfirmDisabled,
+                registeredCount < 6 && styles.globalConfirmDisabled,
               ]}
-              disabled={registeredCount === 0}
+              disabled={registeredCount < 6}
               onPress={handleConfirm}
+              activeOpacity={0.8}
             >
-              <Text style={styles.globalConfirmText}>Confirmar</Text>
+              <Text
+                style={[
+                  styles.globalConfirmText,
+                  registeredCount < 6 && styles.globalConfirmDisabledText,
+                ]}
+              >
+                {registeredCount === 6
+                  ? 'Registrar Hábitos'
+                  : `Registrar`}
+              </Text>
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
 
       </ScrollView>
 
@@ -335,8 +356,9 @@ const styles = StyleSheet.create({
 
   confirmationSection: { marginTop: 10, alignItems: 'center' },
   globalConfirmButton: { backgroundColor: '#0F613B', width: '100%', paddingVertical: 15, borderRadius: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-  globalConfirmDisabled: { backgroundColor: '#A5C1B3' },
+  globalConfirmDisabled: { backgroundColor: '#C2D6CC' },
   globalConfirmText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  globalConfirmDisabledText: { color: '#5A7568', fontSize: 15, fontWeight: '600' },
 
   confirmedBox: { backgroundColor: '#E4EDE7', width: '100%', paddingVertical: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#A5C1B3' },
   confirmedText: { color: '#0F613B', fontSize: 16, fontWeight: 'bold' },
