@@ -12,8 +12,8 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { HabitKey, DailyHabitRatings, MySqlDailyHabitRecord } from '../types/habits';
 import {
   HABIT_CATALOG,
@@ -23,18 +23,22 @@ import {
   getRatingColor,
   getRatingLabel,
 } from '../constants/habits';
+import { PatientBottomNav, PatientTab } from '../components/PatientBottomNav';
 
 interface DailyCheckInScreenProps {
   onBack?: () => void;
   onSaveRecord?: (record: MySqlDailyHabitRecord) => void;
   userName?: string;
+  onNavigateTab?: (tab: PatientTab) => void;
 }
 
 export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
   onBack,
   onSaveRecord,
   userName = 'Vani',
+  onNavigateTab,
 }) => {
+  const insets = useSafeAreaInsets();
 
   // Fecha estipulada en formato estándar MySQL 'YYYY-MM-DD' (para columna tipo DATE)
   const recordDate = useMemo(() => {
@@ -66,18 +70,18 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
     const currentVal = habits[key];
 
     if (key === 'hidratacion') {
-      const initialWater = currentVal !== null ? currentVal : 2.0;
+      const initialWater = currentVal ?? 2.0;
       setWaterLiters(initialWater);
       setWaterInputText(String(initialWater));
     } else if (key === 'sueno') {
       setRating(currentVal);
-      slideAnim.setValue(currentVal !== null ? currentVal : 1);
-      const initialSleep = habits.sueno_horas !== null && habits.sueno_horas !== undefined ? habits.sueno_horas : 8.0;
+      slideAnim.setValue(currentVal ?? 1);
+      const initialSleep = habits.sueno_horas ?? 8.0;
       setSleepHours(initialSleep);
       setSleepHoursInput(String(initialSleep));
     } else {
       setRating(currentVal);
-      slideAnim.setValue(currentVal !== null ? currentVal : 1);
+      slideAnim.setValue(currentVal ?? 1);
     }
 
     setModalVisible(true);
@@ -97,15 +101,15 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
     if (!activeHabit) return;
 
     if (activeHabit === 'hidratacion') {
-      const parsed = parseFloat(waterInputText.replace(',', '.'));
-      const finalVal = !isNaN(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : waterLiters;
+      const parsed = Number.parseFloat(waterInputText.replace(',', '.'));
+      const finalVal = !Number.isNaN(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : waterLiters;
       setHabits((prev) => ({ ...prev, hidratacion: finalVal }));
       setModalVisible(false);
       setActiveHabit(null);
     } else if (activeHabit === 'sueno') {
       if (rating !== null) {
-        const parsed = parseFloat(sleepHoursInput.replace(',', '.'));
-        const finalHours = !isNaN(parsed) && parsed >= 0 ? Math.round(parsed * 10) / 10 : sleepHours;
+        const parsed = Number.parseFloat(sleepHoursInput.replace(',', '.'));
+        const finalHours = !Number.isNaN(parsed) && parsed >= 0 ? Math.round(parsed * 10) / 10 : sleepHours;
         setHabits((prev) => ({ ...prev, sueno: rating, sueno_horas: finalHours }));
         setModalVisible(false);
         setActiveHabit(null);
@@ -176,7 +180,12 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 85, 110) },
+        ]}
+      >
 
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -192,9 +201,6 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
             <View>
               <Text style={styles.greeting}>Hola, {userName}!</Text>
             </View>
-          </View>
-          <View style={styles.profileIcon}>
-            <Ionicons name="person-outline" size={24} color="#666" />
           </View>
         </View>
 
@@ -340,8 +346,8 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
                       value={waterInputText}
                       onChangeText={(val) => {
                         setWaterInputText(val);
-                        const num = parseFloat(val.replace(',', '.'));
-                        if (!isNaN(num) && num >= 0) {
+                        const num = Number.parseFloat(val.replace(',', '.'));
+                        if (!Number.isNaN(num) && num >= 0) {
                           setWaterLiters(num);
                         }
                       }}
@@ -438,8 +444,8 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
                           value={sleepHoursInput}
                           onChangeText={(val) => {
                             setSleepHoursInput(val);
-                            const num = parseFloat(val.replace(',', '.'));
-                            if (!isNaN(num) && num >= 0) {
+                            const num = Number.parseFloat(val.replace(',', '.'));
+                            if (!Number.isNaN(num) && num >= 0) {
                               setSleepHours(num);
                             }
                           }}
@@ -479,23 +485,15 @@ export const DailyCheckInScreen: React.FC<DailyCheckInScreenProps> = ({
         </Pressable>
       </Modal>
 
-      <View style={styles.bottomNav}>
-        <TouchableOpacity onPress={onBack}>
-          <Ionicons name="home-outline" size={32} color="#185c37" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="book-outline" size={32} color="#185c37" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.centerNavIcon}>
-          <MaterialCommunityIcons name="brain" size={40} color="#185c37" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialCommunityIcons name="robot-outline" size={32} color="#185c37" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="person-circle-outline" size={32} color="#185c37" />
-        </TouchableOpacity>
-      </View>
+      {/* Barra de navegación inferior (4 botones, con elevación sobre botones nativos) */}
+      <PatientBottomNav
+        activeTab="habits"
+        onNavigate={(tab) => {
+          if (onNavigateTab) {
+            onNavigateTab(tab);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -508,7 +506,6 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 12, padding: 4 },
   greeting: { fontSize: 22, fontWeight: 'bold', color: '#6A8296' },
   date: { fontSize: 16, color: '#6A8296' },
-  profileIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#D3D3D3', justifyContent: 'center', alignItems: 'center' },
   progressCard: { borderWidth: 1.5, borderColor: '#A5C1B3', borderRadius: 15, padding: 20, backgroundColor: '#E4EDE7', alignItems: 'center', marginBottom: 30 },
   progressNumber: { fontSize: 24, fontWeight: '500', color: '#7E9186' },
   progressText: { fontSize: 18, color: '#7E9186', marginTop: 5 },
@@ -529,9 +526,6 @@ const styles = StyleSheet.create({
 
   confirmedBox: { backgroundColor: '#E4EDE7', width: '100%', paddingVertical: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#A5C1B3' },
   confirmedText: { color: '#0F613B', fontSize: 16, fontWeight: 'bold' },
-
-  bottomNav: { position: 'absolute', bottom: 0, width: '100%', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#EBEBEB', borderTopWidth: 1, borderColor: '#D3D3D3', paddingVertical: 15, paddingHorizontal: 10 },
-  centerNavIcon: { transform: [{ scale: 1.2 }] },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, alignItems: 'center', elevation: 5, position: 'relative' },
